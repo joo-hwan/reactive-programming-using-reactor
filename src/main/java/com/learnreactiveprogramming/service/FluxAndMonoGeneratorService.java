@@ -3,7 +3,9 @@ package com.learnreactiveprogramming.service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.Random;
 
 public class FluxAndMonoGeneratorService {
 
@@ -32,7 +34,50 @@ public class FluxAndMonoGeneratorService {
         return namesFlux;
     }
 
+    public Mono<String> namesMono_map_filter(int stringLength) {
+        return Mono.just("alex")
+                .map(String::toUpperCase)
+                .filter(s -> s.length() > stringLength);
+    }
 
+    public Flux<String> namesFlux_flatmap(int stringLength) {
+        return Flux.fromIterable(List.of("alex", "ben", "chloe"))
+                .map(String::toUpperCase)
+                //.map(s -> s.toUpperCase())
+                .filter(s -> s.length() > stringLength)
+                .flatMap(this::splitString)
+                .log();
+    }
+
+    public Flux<String> namesFlux_flatmap_async(int stringLength) {
+        return Flux.fromIterable(List.of("alex", "ben", "chloe"))
+                .map(String::toUpperCase)
+                //.map(s -> s.toUpperCase())
+                .filter(s -> s.length() > stringLength)
+                .flatMap(this::splitString_withDelay)
+                .log();
+    }
+
+    public Flux<String> namesFlux_concatmap(int stringLength) {
+        return Flux.fromIterable(List.of("alex", "ben", "chloe"))
+                .map(String::toUpperCase)
+                //.map(s -> s.toUpperCase())
+                .filter(s -> s.length() > stringLength)
+                .concatMap(this::splitString_withDelay)
+                .log();
+    }
+
+    public Flux<String> splitString(String name) {
+        var charArray = name.split("");
+        return Flux.fromArray(charArray);
+    }
+
+    public Flux<String> splitString_withDelay(String name) {
+        var charArray = name.split("");
+        // var delay = new Random().nextInt(1000);
+        var delay = 1000;
+        return Flux.fromArray(charArray).delayElements(Duration.ofMillis(delay));
+    }
 
     public static void main(String[] args) {
 

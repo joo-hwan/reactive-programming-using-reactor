@@ -39,4 +39,32 @@ public class FluxAndMonoGeneratorServiceTest {
                 .expectNext("alex", "ben", "chloe")
                 .verifyComplete();
     }
+
+    @Test
+    void namesFlux_flatmap() {
+        var namesFlux = fluxAndMonoGeneratorService.namesFlux_flatmap(3);
+        StepVerifier.create(namesFlux)
+                .expectNext("A", "L", "E", "X", "C", "H", "L", "O", "E")
+                .verifyComplete();
+
+    }
+
+    @Test
+    void namesFlux_flatmap_async() {
+        var namesFlux = fluxAndMonoGeneratorService.namesFlux_flatmap_async(3);
+        StepVerifier.create(namesFlux)
+                //.expectNext("A", "L", "E", "X", "C", "H", "L", "O", "E")
+                .expectNextCount(9)
+                .verifyComplete();
+
+    }
+
+    @Test
+    void namesFlux_concatmap() {
+        var namesFlux = fluxAndMonoGeneratorService.namesFlux_concatmap(3);
+        StepVerifier.create(namesFlux)
+                .expectNext("A", "L", "E", "X", "C", "H", "L", "O", "E")
+                //.expectNextCount(9)
+                .verifyComplete();
+    }
 }
