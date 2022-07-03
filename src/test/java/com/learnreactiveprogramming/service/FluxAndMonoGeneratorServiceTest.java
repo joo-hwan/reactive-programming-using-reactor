@@ -201,4 +201,67 @@ public class FluxAndMonoGeneratorServiceTest {
                 .expectNext("AB")
                 .verifyComplete();
     }
+
+    @Test
+    void exception_flux() {
+        var value = fluxAndMonoGeneratorService.exception_flux();
+
+        StepVerifier.create(value)
+                .expectNext("A","B","C")
+                .expectError(RuntimeException.class)
+                .verify();
+    }
+
+    @Test
+    void exception_flux_1() {
+        var value = fluxAndMonoGeneratorService.exception_flux();
+
+        StepVerifier.create(value)
+                .expectNext("A","B","C")
+                .expectError()
+                .verify();
+    }
+
+    @Test
+    void exception_flux_2() {
+        var value = fluxAndMonoGeneratorService.exception_flux();
+
+        StepVerifier.create(value)
+                .expectNext("A","B","C")
+                .expectErrorMessage("Exception occurred")
+                .verify();
+    }
+
+    @Test
+    void explore_OnErrorReturn() {
+
+        var value = fluxAndMonoGeneratorService.explore_OnErrorReturn();
+
+        StepVerifier.create(value)
+                .expectNext("A","B","C","D")
+                .verifyComplete();
+    }
+
+    @Test
+    void explore_OnErrorResume() {
+        var e = new IllegalStateException("Not a valid State");
+
+        var value = fluxAndMonoGeneratorService.explore_OnErrorResume(e);
+
+        StepVerifier.create(value)
+                .expectNext("A","B","C","D","E","F")
+                .verifyComplete();
+    }
+
+    @Test
+    void explore_OnErrorResume_1() {
+        var e = new RuntimeException("Not a valid State");
+
+        var value = fluxAndMonoGeneratorService.explore_OnErrorResume(e);
+
+        StepVerifier.create(value)
+                .expectNext("A","B","C")
+                .expectError(RuntimeException.class)
+                .verify();
+    }
 }

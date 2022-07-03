@@ -1,5 +1,6 @@
 package com.learnreactiveprogramming.service;
 
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
 
+@Slf4j
 public class FluxAndMonoGeneratorService {
 
     public Flux<String> namesFlux() {
@@ -26,6 +28,19 @@ public class FluxAndMonoGeneratorService {
                 //.map(s -> s.toUpperCase())
                 .filter(s -> s.length() > stringLength)
                 .map(s -> s.length() + "-" + s)
+                .doOnNext(name -> {
+                    System.out.println("Name is : " + name);
+                    name.toLowerCase();
+                })
+                .doOnSubscribe(s -> {
+                    System.out.println("Subscription is : " + s);
+                })
+                .doOnComplete(() -> {
+                    System.out.println("Inside the complete callback");
+                })
+                .doFinally(signalType -> {
+                    System.out.println("inside finally : " + signalType);
+                })
                 .log();
     }
 
@@ -216,6 +231,36 @@ public class FluxAndMonoGeneratorService {
 
         return aMono.zipWith(bMono)
                 .map(t2 -> t2.getT1() + t2.getT2())
+                .log();
+    }
+
+    public Flux<String> exception_flux() {
+        return Flux.just("A","B","C")
+                .concatWith(Flux.error(new RuntimeException("Exception occurred")))
+                .concatWith(Flux.just("D"))
+                .log();
+    }
+
+    public Flux<String> explore_OnErrorReturn() {
+        return Flux.just("A","B","C")
+                .concatWith(Flux.error(new IllegalStateException("Exception occurred")))
+                .onErrorReturn("D")
+                .log();
+    }
+
+    public Flux<String> explore_OnErrorResume(Exception e) {
+
+        var recoveryFlux = Flux.just("D","E","F");
+
+        return Flux.just("A","B","C")
+                .concatWith(Flux.error(e))
+                .onErrorResume(ex -> {
+                    log.error("Exception is ", ex);
+                    if(ex instanceof IllegalStateException)
+                        return recoveryFlux;
+                    else
+                        return Flux.error(ex);
+                })
                 .log();
     }
 
