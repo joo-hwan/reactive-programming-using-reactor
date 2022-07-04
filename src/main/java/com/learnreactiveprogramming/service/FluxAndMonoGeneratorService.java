@@ -1,5 +1,6 @@
 package com.learnreactiveprogramming.service;
 
+import com.learnreactiveprogramming.exception.ReactorException;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -261,6 +262,56 @@ public class FluxAndMonoGeneratorService {
                     else
                         return Flux.error(ex);
                 })
+                .log();
+    }
+
+    public Flux<String> explore_OnErrorContinue() {
+
+        return Flux.just("A","B","C")
+                .map(name -> {
+                    if(name.equals("B"))
+                        throw new IllegalStateException("Exception");
+                    return name;
+                })
+                .concatWith(Flux.just("D"))
+                .onErrorContinue((ex, name) -> {
+                    log.error("Exception is ", ex);
+                    log.info("name is {}", name);
+                })
+                .log();
+    }
+
+    public Flux<String> explore_OnErrorMap() {
+
+        return Flux.just("A","B","C")
+                .map(name -> {
+                    if(name.equals("B"))
+                        throw new IllegalStateException("Exception");
+                    return name;
+                })
+                .concatWith(Flux.just("D"))
+                .onErrorMap((ex) -> {
+                    log.error("Exception is ", ex);
+                    return new ReactorException(ex, ex.getMessage());
+                })
+                .log();
+    }
+
+    public Flux<String> explore_doOnError() {
+        return Flux.just("A","B","C")
+                .concatWith(Flux.error(new IllegalStateException("Exception occurred")))
+                .doOnError(ex -> {
+                    log.error("Exception is ", ex);
+                })
+                .log();
+    }
+
+    public Mono<Object> explore_Mono_doErrorReturn() {
+        return Mono.just("A")
+                .map(value -> {
+                    throw new RuntimeException("Exception");
+                })
+                .onErrorReturn("abc")
                 .log();
     }
 
