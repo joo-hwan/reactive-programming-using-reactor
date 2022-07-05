@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.retry.Retry;
 import reactor.util.retry.RetryBackoffSpec;
 
@@ -20,10 +21,17 @@ public class MovieReactiveService {
 
     private MovieInfoService movieInfoService;
     private ReviewService reviewService;
+    private RevenueService revenueService;
 
     public MovieReactiveService(MovieInfoService movieInfoService, ReviewService reviewService) {
         this.movieInfoService = movieInfoService;
         this.reviewService = reviewService;
+    }
+
+    public MovieReactiveService(MovieInfoService movieInfoService, ReviewService reviewService, RevenueService revenueService) {
+        this.movieInfoService = movieInfoService;
+        this.reviewService = reviewService;
+        this.revenueService = revenueService;
     }
 
     public Flux<Movie> getAllMovies() {
@@ -140,5 +148,21 @@ public class MovieReactiveService {
                 .collectList();
 
         return movieInfoMono.zipWith(reviewsFlux, (movieInfo, reviews) -> new Movie(movieInfo, reviews)).log();
+    }
+
+    public Mono<Movie> getMovieById_withRevenue(long movieId) {
+        var movieInfoMono = movieInfoService.retrieveMovieInfoMonoUsingId(movieId);
+        var reviewsFlux = reviewService.retrieveReviewsFlux(movieId)
+                .collectList();
+
+        var revenueMono = Mono.fromCallable(() -> revenueService.getRevenue(movieId))
+                .subscribeOn(Schedulers.boundedElastic());
+
+
+        return movieInfoMono.zipWith(reviewsFlux, (movieInfo, reviews) -> new Movie(movieInfo, reviews))
+                .zipWith(revenueMono, (movie, revenue) -> {
+                    movie.setRevenue(revenue);
+                    return movie;
+                }).log();
     }
 }
