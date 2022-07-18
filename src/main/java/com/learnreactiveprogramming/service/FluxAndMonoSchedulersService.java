@@ -2,6 +2,8 @@ package com.learnreactiveprogramming.service;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.ParallelFlux;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
@@ -31,6 +33,62 @@ public class FluxAndMonoSchedulersService {
                 .log();
 
         return namesFlux.mergeWith(namesFlux1);
+    }
+
+    public ParallelFlux<String> explore_parallel() {
+
+        var noOfCores = Runtime.getRuntime().availableProcessors();
+        log.info("noOfCores : {}", noOfCores);
+        return Flux.fromIterable(namesList)
+                //.publishOn(Schedulers.parallel())
+                .parallel()
+                .runOn(Schedulers.parallel())
+                .map(this::upperCase)
+                .log();
+    }
+
+    public Flux<String> explore_parallel_usingFlatMap() {
+        return Flux.fromIterable(namesList)
+                .flatMap(name ->
+                    Mono.just(name)
+                            .map(this::upperCase)
+                            .subscribeOn(Schedulers.parallel())
+                )
+                .log();
+    }
+
+    public Flux<String> explore_parallel_usingFlatMap_1() {
+        var namesFlux = Flux.fromIterable(namesList)
+                .flatMap(name ->
+                        Mono.just(name)
+                                .map(this::upperCase)
+                                .subscribeOn(Schedulers.parallel())
+                )
+                .log();
+
+        var namesFlux1 = Flux.fromIterable(namesList1)
+                .flatMap(name ->
+                        Mono.just(name)
+                                .map(this::upperCase)
+                                .subscribeOn(Schedulers.parallel())
+                )
+                .map(s -> {
+                    log.info("name is {}", s);
+                    return s;
+                })
+                .log();
+
+        return namesFlux.mergeWith(namesFlux1);
+    }
+
+    public Flux<String> explore_parallel_usingFlatMapSequenctial() {
+        return Flux.fromIterable(namesList)
+                .flatMapSequential(name ->
+                        Mono.just(name)
+                                .map(this::upperCase)
+                                .subscribeOn(Schedulers.parallel())
+                )
+                .log();
     }
 
     public Flux<String> explore_subscribeOn() {
