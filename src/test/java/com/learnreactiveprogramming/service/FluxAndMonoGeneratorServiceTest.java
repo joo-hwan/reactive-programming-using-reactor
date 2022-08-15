@@ -2,8 +2,12 @@ package com.learnreactiveprogramming.service;
 
 import com.learnreactiveprogramming.exception.ReactorException;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Hooks;
 import reactor.test.StepVerifier;
+import reactor.test.scheduler.VirtualTimeScheduler;
+import reactor.tools.agent.ReactorDebugAgent;
 
+import java.time.Duration;
 import java.util.List;
 
 public class FluxAndMonoGeneratorServiceTest {
@@ -66,6 +70,18 @@ public class FluxAndMonoGeneratorServiceTest {
     void namesFlux_concatmap() {
         var namesFlux = fluxAndMonoGeneratorService.namesFlux_concatmap(3);
         StepVerifier.create(namesFlux)
+                .expectNext("A", "L", "E", "X", "C", "H", "L", "O", "E")
+                //.expectNextCount(9)
+                .verifyComplete();
+    }
+
+    @Test
+    void namesFlux_concatmap_virtualTimer() {
+        VirtualTimeScheduler.getOrSet();
+
+        var namesFlux = fluxAndMonoGeneratorService.namesFlux_concatmap(3);
+        StepVerifier.withVirtualTime(() -> namesFlux)
+                .thenAwait(Duration.ofSeconds(10))
                 .expectNext("A", "L", "E", "X", "C", "H", "L", "O", "E")
                 //.expectNextCount(9)
                 .verifyComplete();
@@ -277,7 +293,36 @@ public class FluxAndMonoGeneratorServiceTest {
 
     @Test
     void explore_OnErrorMap() {
-        var value = fluxAndMonoGeneratorService.explore_OnErrorMap();
+        var e = new RuntimeException("Not a valid state");
+        var value = fluxAndMonoGeneratorService.explore_OnErrorMap(e);
+
+        StepVerifier.create(value)
+                .expectNext("A")
+                .expectError(ReactorException.class)
+                .verify();
+    }
+
+    @Test
+    void explore_OnErrorMap_onOperatorDebug() {
+        //Hooks.onOperatorDebug();
+
+        var e = new RuntimeException("Not a valid state");
+        var value = fluxAndMonoGeneratorService.explore_OnErrorMap(e);
+
+        StepVerifier.create(value)
+                .expectNext("A")
+                .expectError(ReactorException.class)
+                .verify();
+    }
+
+    @Test
+    void explore_OnErrorMap_reactorDebugAgent() {
+        //Hooks.onOperatorDebug();
+
+        ReactorDebugAgent.init();
+        ReactorDebugAgent.processExistingClasses();
+        var e = new RuntimeException("Not a valid state");
+        var value = fluxAndMonoGeneratorService.explore_OnErrorMap(e);
 
         StepVerifier.create(value)
                 .expectNext("A")
@@ -299,6 +344,50 @@ public class FluxAndMonoGeneratorServiceTest {
         var value = fluxAndMonoGeneratorService.explore_Mono_doErrorReturn();
         StepVerifier.create(value)
                 .expectNext("abc")
+                .verifyComplete();
+    }
+
+    @Test
+    void explore_generate() {
+        var flux = fluxAndMonoGeneratorService.explore_generate().log();
+
+        StepVerifier.create(flux)
+                .expectNextCount(10)
+                .verifyComplete();
+    }
+
+    @Test
+    void explore_create() {
+        var flux = fluxAndMonoGeneratorService.explore_create().log();
+
+        StepVerifier.create(flux)
+                .expectNextCount(9)
+                .verifyComplete();
+    }
+
+    @Test
+    void explore_create_mono() {
+        var mono = fluxAndMonoGeneratorService.explore_create_mono().log();
+        StepVerifier.create(mono)
+                .expectNext("alex")
+                .verifyComplete();
+    }
+
+    @Test
+    void explore_handle() {
+        var flux = fluxAndMonoGeneratorService.explore_handle().log();
+
+        StepVerifier.create(flux)
+                .expectNextCount(2)
+                .verifyComplete();
+    }
+
+    @Test
+    void namesMono_map_filter() {
+        var mono = fluxAndMonoGeneratorService.namesMono_map_filter(3);
+
+        StepVerifier.create(mono)
+                .expectNext("ALEX")
                 .verifyComplete();
     }
 }
